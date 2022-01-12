@@ -55,12 +55,6 @@ ExecInitSequence(Sequence *node, EState *estate, int eflags)
 		Assert(no < numSubplans);
 		
 		sequenceState->subplans[no] = ExecInitNode(subplan, estate, eflags);
-		/*
-		 * Check all except the last subplan of sequence, if there exists 
-		 * ShareInputScan, set it's discard_output flag to true.
-		 */
-		if (IsA(sequenceState->subplans[no], ShareInputScanState) && no < numSubplans - 1)
-			((ShareInputScanState *)sequenceState->subplans[no])->discard_output = true;
 		no++;
 	}
 

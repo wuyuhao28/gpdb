@@ -2208,7 +2208,6 @@ typedef struct ShareInputScanState
 	struct shareinput_Xslice_reference *ref;
 
 	bool		isready;
-	bool		discard_output;	/* Does this ShareInputScan need to discard output? */
 } ShareInputScanState;
 
 /* XXX Should move into buf file */
