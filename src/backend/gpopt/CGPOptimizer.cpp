@@ -61,11 +61,20 @@ CGPOptimizer::GPOPTOptimizedPlan(
 	}
 	GPOS_CATCH_EX(ex)
 	{
-		// clone the error message before context free.
-		CHAR *serialized_error_msg =
-			gpopt_context.CloneErrorMsg(MessageContext);
-		// clean up context
-		gpopt_context.Free(gpopt_context.epinQuery, gpopt_context.epinPlStmt);
+		CHAR *serialized_error_msg = NULL;
+		GPOS_TRY
+		{
+			// clone the error message before context free.
+			serialized_error_msg =
+				gpopt_context.CloneErrorMsg(MessageContext);
+			// clean up context
+			gpopt_context.Free(gpopt_context.epinQuery, gpopt_context.epinPlStmt);
+		}
+		GPOS_CATCH_EX(ex)
+		{
+			PG_RE_THROW();
+		}
+		GPOS_CATCH_END;
 
 		// Special handler for a few common user-facing errors. In particular,
 		// we want to use the correct error code for these, in case an application

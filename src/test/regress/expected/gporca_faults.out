@@ -74,3 +74,34 @@ SELECT gp_inject_fault('opt_relcache_translator_catalog_access', 'reset', 1);
  Success:
 (1 row)
 
+-- test corruption when MemCtxtStrdup throw ERROR in ORCA
+SELECT gp_inject_fault_infinite('gpdbwrappers_MemCtxtStrdup', 'error', 1);
+ gp_inject_fault_infinite 
+--------------------------
+ Success:
+(1 row)
+
+set optimizer to on;
+EXPLAIN SELECT * FROM func1_nosql_vol(5), foo;
+ERROR:  fault triggered, fault name:'gpdbwrappers_MemCtxtStrdup' fault type:'error'
+-- Must let Planner reset the injected fault
+set optimizer to off;
+SELECT gp_inject_fault_infinite('gpdbwrappers_MemCtxtStrdup', 'reset', 1);
+ gp_inject_fault_infinite 
+--------------------------
+ Success:
+(1 row)
+
+set optimizer to on;
+EXPLAIN SELECT * FROM func1_nosql_vol(5), foo;
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=10000000000.25..10000001756.28 rows=86100 width=12)
+   ->  Nested Loop  (cost=10000000000.25..10000000608.28 rows=28700 width=12)
+         ->  Broadcast Motion 1:3  (slice2)  (cost=0.25..0.28 rows=1 width=4)
+               ->  Function Scan on func1_nosql_vol  (cost=0.25..0.26 rows=1 width=4)
+         ->  Seq Scan on foo  (cost=0.00..321.00 rows=28700 width=8)
+ Optimizer: Postgres-based planner
+(6 rows)
+
+reset optimizer;

@@ -34,3 +34,16 @@ SELECT * FROM func1_nosql_vol(5), foo;
 
 -- The fault should *not* be hit above when optimizer = off, to reset it now.
 SELECT gp_inject_fault('opt_relcache_translator_catalog_access', 'reset', 1);
+
+-- test corruption when MemCtxtStrdup throw ERROR in ORCA
+SELECT gp_inject_fault_infinite('gpdbwrappers_MemCtxtStrdup', 'error', 1);
+set optimizer to on;
+EXPLAIN SELECT * FROM func1_nosql_vol(5), foo;
+
+-- Must let Planner reset the injected fault
+set optimizer to off;
+SELECT gp_inject_fault_infinite('gpdbwrappers_MemCtxtStrdup', 'reset', 1);
+set optimizer to on;
+EXPLAIN SELECT * FROM func1_nosql_vol(5), foo;
+
+reset optimizer;
